@@ -40,6 +40,22 @@ class StoreManagement extends ServiceAbstract
     protected $localFormat;
 
     /**
+     * @var \Magento\Config\Model\Config\Loader
+     */
+    private $configLoader;
+
+    /**
+     * @var \Magento\Framework\ObjectManagerInterface
+     */
+    protected $_objectManager;
+
+    /**
+     * @var \Magento\Framework\App\Config\ScopeConfigInterface
+     */
+    protected $scopeConfig;
+    /**
+
+    /**
      * StoreManagement constructor.
      *
      * @param \Magento\Framework\App\RequestInterface                    $requestInterface
@@ -53,11 +69,16 @@ class StoreManagement extends ServiceAbstract
         StoreManagerInterface $storeManager,
         CollectionFactory $storeCollectionFactory,
         StoreFactory $storeFactory,
-        Format $format
+        Format $format,
+        \Magento\Config\Model\Config\Loader $loader,
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
     ) {
+        $this->scopeConfig            = $scopeConfig;
         $this->localFormat            = $format;
         $this->storeCollectionFactory = $storeCollectionFactory;
         $this->storeFactory           = $storeFactory;
+        $this->configLoader  = $loader;
+        $this->storeManager = $storeManager;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
 
@@ -100,6 +121,21 @@ class StoreManagement extends ServiceAbstract
                 $xStore->setData('rate', $rate);
                 $xStore->setData('price_format', $this->localFormat->getPriceFormat(null, $currentCurrency));
 
+                if($searchCriteria->getData('isPWA')=='1') {
+                    $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+                    $fileName = $objectManager->get('Magento\Store\Model\StoreManagerInterface')
+                            ->getStore()
+                            ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'pwa_logo/';
+
+                    $xStore->setData('logo', $fileName.$this->scopeConfig->getValue('pwa/logo/pwa_logo', 'stores', $searchCriteria->getData('storeId')));
+                    $xStore->setData('brand_name', $this->scopeConfig->getValue('pwa/brand_name/pwa_brand_active', 'stores', $searchCriteria->getData('storeId')));
+                    $xStore->setData('theme_color', $this->scopeConfig->getValue('pwa/color_picker/pwa_theme_color', 'stores', $searchCriteria->getData('storeId')));
+                    // add integrate data to store data
+                    $xStore->setData('is_integrate_gc', $this->scopeConfig->getValue("pwa/integrate/pwa_integrate_gift_card",'stores', $searchCriteria->getData('storeId')));
+                    $xStore->setData('is_integrate_rp', $this->scopeConfig->getValue("pwa/integrate/pwa_integrate_reward_points",'stores', $searchCriteria->getData('storeId')));
+                    $xStore->setData('out_of_stock', $this->scopeConfig->getValue("pwa/product_category/pwa_show_out_of_stock_products", 'stores', $searchCriteria->getData('storeId')));
+                    $xStore->setData('visibility', $this->scopeConfig->getValue("pwa/product_category/pwa_show_product_visibility", 'stores', $searchCriteria->getData('storeId')));
+                }
                 $items[] = $xStore;
             }
         }
@@ -119,6 +155,10 @@ class StoreManagement extends ServiceAbstract
     {
         /** @var \Magento\Store\Model\ResourceModel\Store\Collection $collection */
         $collection = $this->storeCollectionFactory->create();
+        // for PWA only
+        if ($searchCriteria->getData('storeId')) {
+            $collection->addFieldToFilter('store_id', $searchCriteria->getData('storeId'));
+        }
         $collection->setLoadDefault(true);
         if (is_nan($searchCriteria->getData('currentPage'))) {
             $collection->setCurPage(1);
