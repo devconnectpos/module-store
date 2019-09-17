@@ -135,6 +135,8 @@ class StoreManagement extends ServiceAbstract
                     $xStore->setData('is_integrate_rp', $this->scopeConfig->getValue("pwa/integrate/pwa_integrate_reward_points",'stores', $searchCriteria->getData('storeId')));
                     $xStore->setData('out_of_stock', $this->scopeConfig->getValue("pwa/product_category/pwa_show_out_of_stock_products", 'stores', $searchCriteria->getData('storeId')));
                     $xStore->setData('visibility', $this->scopeConfig->getValue("pwa/product_category/pwa_show_product_visibility", 'stores', $searchCriteria->getData('storeId')));
+                    // default order address
+                    $xStore->setData('default_order_address', $this->scopeConfig->getValue("pwa/default_order_address", 'stores', $searchCriteria->getData('storeId')));
                 }
                 $items[] = $xStore;
             }
