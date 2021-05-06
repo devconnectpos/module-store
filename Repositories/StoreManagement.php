@@ -106,10 +106,12 @@ class StoreManagement extends ServiceAbstract
         $items = [];
         if ($collection->getLastPageNumber() < $searchCriteria->getData('currentPage')) {
         } else {
+            /** @var Store $store */
             foreach ($collection as $store) {
                 $xStore = new XStore();
 
                 $xStore->addData($store->getData());
+                $xStore->setName($store->getName() . ' (' . $store->getCode() . ')');
 
                 $baseCurrency = $store->getBaseCurrency();
                 $xStore->setData('base_currency', $baseCurrency->getData());
@@ -187,7 +189,6 @@ class StoreManagement extends ServiceAbstract
     {
         return $this->storeFactory->create();
     }
-
 
     /**
      * @param \Magento\Store\Model\Store $store
