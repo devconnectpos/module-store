@@ -53,15 +53,20 @@ class StoreManagement extends ServiceAbstract
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
      */
     protected $scopeConfig;
-    /**
 
     /**
+     *
+     * /**
      * StoreManagement constructor.
      *
      * @param \Magento\Framework\App\RequestInterface                    $requestInterface
      * @param \SM\XRetail\Helper\DataConfig                              $dataConfig
      * @param \Magento\Store\Model\StoreManagerInterface                 $storeManager
      * @param \Magento\Store\Model\ResourceModel\Store\CollectionFactory $storeCollectionFactory
+     * @param StoreFactory                                               $storeFactory
+     * @param Format                                                     $format
+     * @param \Magento\Config\Model\Config\Loader                        $loader
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface         $scopeConfig
      */
     public function __construct(
         RequestInterface $requestInterface,
@@ -73,11 +78,11 @@ class StoreManagement extends ServiceAbstract
         \Magento\Config\Model\Config\Loader $loader,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
     ) {
-        $this->scopeConfig            = $scopeConfig;
-        $this->localFormat            = $format;
+        $this->scopeConfig = $scopeConfig;
+        $this->localFormat = $format;
         $this->storeCollectionFactory = $storeCollectionFactory;
-        $this->storeFactory           = $storeFactory;
-        $this->configLoader  = $loader;
+        $this->storeFactory = $storeFactory;
+        $this->configLoader = $loader;
         $this->storeManager = $storeManager;
         parent::__construct($requestInterface, $dataConfig, $storeManager);
     }
@@ -97,8 +102,9 @@ class StoreManagement extends ServiceAbstract
      */
     public function loadStore(DataObject $searchCriteria)
     {
-        if (is_null($searchCriteria) || !$searchCriteria)
+        if (is_null($searchCriteria) || !$searchCriteria) {
             $searchCriteria = $this->getSearchCriteria();
+        }
 
         $this->getSearchResult()->setSearchCriteria($searchCriteria);
         $collection = $this->getStoreCollection($searchCriteria);
@@ -111,7 +117,7 @@ class StoreManagement extends ServiceAbstract
                 $xStore = new XStore();
 
                 $xStore->addData($store->getData());
-                $xStore->setName($store->getName() . ' (' . $store->getCode() . ')');
+                $xStore->setName($store->getName().' ('.$store->getCode().')');
 
                 $baseCurrency = $store->getBaseCurrency();
                 $xStore->setData('base_currency', $baseCurrency->getData());
@@ -123,18 +129,22 @@ class StoreManagement extends ServiceAbstract
                 $xStore->setData('rate', $rate);
                 $xStore->setData('price_format', $this->localFormat->getPriceFormat(null, $currentCurrency));
 
-                if($searchCriteria->getData('isPWA')=='1') {
+                // Base url
+                $xStore->setData('unsecure_base_url', $this->scopeConfig->getValue("web/unsecure/base_url", 'stores', $store->getId()));
+                $xStore->setData('secure_base_url', $this->scopeConfig->getValue("web/secure/base_url", 'stores', $store->getId()));
+
+                if ($searchCriteria->getData('isPWA') == '1') {
                     $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
                     $fileName = $objectManager->get('Magento\Store\Model\StoreManagerInterface')
                             ->getStore()
-                            ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA) . 'pwa_logo/';
+                            ->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_MEDIA).'pwa_logo/';
 
                     $xStore->setData('logo', $fileName.$this->scopeConfig->getValue('pwa/logo/pwa_logo', 'stores', $searchCriteria->getData('storeId')));
                     $xStore->setData('brand_name', $this->scopeConfig->getValue('pwa/brand_name/pwa_brand_active', 'stores', $searchCriteria->getData('storeId')));
                     $xStore->setData('theme_color', $this->scopeConfig->getValue('pwa/color_picker/pwa_theme_color', 'stores', $searchCriteria->getData('storeId')));
                     // add integrate data to store data
-                    $xStore->setData('is_integrate_gc', $this->scopeConfig->getValue("pwa/integrate/pwa_integrate_gift_card",'stores', $searchCriteria->getData('storeId')));
-                    $xStore->setData('is_integrate_rp', $this->scopeConfig->getValue("pwa/integrate/pwa_integrate_reward_points",'stores', $searchCriteria->getData('storeId')));
+                    $xStore->setData('is_integrate_gc', $this->scopeConfig->getValue("pwa/integrate/pwa_integrate_gift_card", 'stores', $searchCriteria->getData('storeId')));
+                    $xStore->setData('is_integrate_rp', $this->scopeConfig->getValue("pwa/integrate/pwa_integrate_reward_points", 'stores', $searchCriteria->getData('storeId')));
                     $xStore->setData('out_of_stock', $this->scopeConfig->getValue("pwa/product_category/pwa_show_out_of_stock_products", 'stores', $searchCriteria->getData('storeId')));
                     $xStore->setData('visibility', $this->scopeConfig->getValue("pwa/product_category/pwa_show_product_visibility", 'stores', $searchCriteria->getData('storeId')));
                     // default order address
@@ -145,9 +155,9 @@ class StoreManagement extends ServiceAbstract
         }
 
         return $this->getSearchResult()
-                    ->setItems($items)
-                    ->setLastPageNumber($collection->getLastPageNumber())
-                    ->setTotalCount($collection->getSize());
+            ->setItems($items)
+            ->setLastPageNumber($collection->getLastPageNumber())
+            ->setTotalCount($collection->getSize());
     }
 
     /**
