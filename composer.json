@@ -2,7 +2,7 @@
 	"name": "connectpos/module-store",
 	"description": "N/A",
 	"type": "magento2-module",
-  "version": "21.11.26",
+  "version": "22.11.18",
 	"license": [
 		"proprietary"
 	],
